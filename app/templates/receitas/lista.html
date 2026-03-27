@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block titulo %}Receitas{% endblock %}
+
+{% block conteudo %}
+<div class="container" style="max-width: 700px;">
+    <div class="py-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0" style="font-family:'Syne',sans-serif; letter-spacing:-1px;">
+                <i class="bi bi-cash-stack me-2" style="color:var(--vinho-claro);"></i>Receitas do Mês
+            </h5>
+            <!-- Seletor de mês -->
+            <form method="GET" class="d-flex gap-2 align-items-center">
+                <select name="mes" class="form-select form-select-sm" style="width:auto;"
+                        onchange="this.form.submit()">
+                    {% for n, nome in [(1,'Jan'),(2,'Fev'),(3,'Mar'),(4,'Abr'),(5,'Mai'),(6,'Jun'),
+                                       (7,'Jul'),(8,'Ago'),(9,'Set'),(10,'Out'),(11,'Nov'),(12,'Dez')] %}
+                        <option value="{{ n }}" {% if n == mes %}selected{% endif %}>{{ nome }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" name="ano" class="form-control form-control-sm"
+                       value="{{ ano }}" style="width:80px;" onchange="this.form.submit()">
+            </form>
+        </div>
+
+        <!-- Card resumo do orçamento -->
+        {% if orcamento %}
+        <div class="card mb-3 p-3 card-receita-summary">
+            <div class="row text-center">
+                <div class="col-4">
+                    <div class="small mb-1" style="color:rgba(76,175,130,0.7);">Receita Prevista</div>
+                    <strong style="color:#4CAF82; font-family:'DM Mono',monospace;">
+                        {{ orcamento.receita_prevista | moeda }}
+                    </strong>
+                </div>
+                <div class="col-4">
+                    <div class="small mb-1" style="color:rgba(76,175,130,0.7);">Total Recebido</div>
+                    <strong style="color:#4CAF82; font-family:'DM Mono',monospace;">
+                        {{ total_recebido | moeda }}
+                    </strong>
+                </div>
+                <div class="col-4">
+                    <div class="small mb-1" style="color:rgba(76,175,130,0.7);">Diferença</div>
+                    <strong style="font-family:'DM Mono',monospace;
+                        color: {% if (total_recebido - orcamento.receita_prevista) >= 0 %}#4CAF82{% else %}#E07070{% endif %};">
+                        {{ (total_recebido - orcamento.receita_prevista) | moeda }}
+                    </strong>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Formulário para adicionar receita -->
+        <div class="card mb-4 p-3">
+            <h6 class="fw-semibold mb-3" style="font-family:'Syne',sans-serif; color:var(--beje);">
+                <i class="bi bi-plus-circle me-2" style="color:#4CAF82;"></i>Adicionar Receita
+            </h6>
+            <form method="POST" action="{{ url_for('receitas.adicionar') }}">
+                <input type="hidden" name="mes" value="{{ mes }}">
+                <input type="hidden" name="ano" value="{{ ano }}">
+                <div class="row g-2">
+                    <div class="col-12 col-sm-4">
+                        <input type="text" name="descricao" class="form-control"
+                               placeholder="Ex: Salário, Freelance..." required maxlength="100">
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" name="valor" class="form-control"
+                                   placeholder="0,00" inputmode="decimal" step="0.01" min="0.01" required>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <input type="date" name="data_recebimento" class="form-control">
+                    </div>
+                    <div class="col-12 col-sm-2">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" name="recorrente" id="recorrente">
+                    <label class="form-check-label small" for="recorrente"
+                           style="color:var(--beje-escuro);">
+                        Receita recorrente (aparece todo mês)
+                    </label>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de receitas -->
+        <div class="card">
+            <div class="list-group list-group-flush">
+                {% for receita in receitas %}
+                    <div class="list-group-item lista-transacao d-flex align-items-center gap-3 py-2">
+                        <i class="bi bi-arrow-down-circle-fill fs-5 flex-shrink-0"
+                           style="color:#4CAF82;"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold small" style="color:var(--beje-claro);">
+                                {{ receita.descricao }}
+                            </div>
+                            <div style="font-size:0.72rem; color:var(--beje-escuro);">
+                                {% if receita.data_recebimento %}
+                                    {{ receita.data_recebimento.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    Sem data definida
+                                {% endif %}
+                                {% if receita.recorrente %}
+                                    <span class="badge ms-1"
+                                          style="background:rgba(107,30,53,0.2)!important;
+                                                 border:1px solid rgba(107,30,53,0.4);
+                                                 color:var(--beje)!important;
+                                                 font-size:0.6rem; letter-spacing:1px;">
+                                        Recorrente
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <span class="fw-bold small"
+                              style="color:#4CAF82; font-family:'DM Mono',monospace;">
+                            {{ receita.valor | moeda }}
+                        </span>
+                        <form method="POST" action="{{ url_for('receitas.excluir', id=receita.id) }}"
+                              onsubmit="return confirm('Remover esta receita?')">
+                            <button type="submit" class="btn btn-link btn-sm p-0"
+                                    style="color:var(--beje-escuro);">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <div class="list-group-item text-center py-4"
+                         style="color:var(--beje-escuro);">
+                        <i class="bi bi-inbox d-block fs-3 mb-2"
+                           style="color:var(--vinho-claro);"></i>
+                        Nenhuma receita registrada para este mês.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

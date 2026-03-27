@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block titulo %}Cartão Santander — {{ nome_mes }}/{{ ano }}{% endblock %}
+
+{% block conteudo %}
+<div class="container-fluid px-3 pt-3">
+
+    <!-- Cabeçalho com navegação de meses -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{{ url_for('cartao.listar', mes=mes_anterior, ano=ano_anterior) }}"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        <div class="text-center">
+            <h5 class="mb-0 fw-bold" style="font-family:'Syne',sans-serif; letter-spacing:-1px;">
+                <i class="bi bi-credit-card-fill me-2" style="color:var(--vinho-claro);"></i>Cartão Santander
+            </h5>
+            <small style="color:var(--beje-escuro);">{{ nome_mes }} / {{ ano }}</small>
+        </div>
+        <a href="{{ url_for('cartao.listar', mes=proximo_mes, ano=proximo_ano) }}"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    </div>
+
+    <!-- Card de total -->
+    <div class="card mb-3 p-3 card-cartao-total">
+        <div class="small mb-1" style="color:rgba(201,185,154,0.6);">Total no Cartão este mês</div>
+        <div class="fw-bold" style="font-size:2rem; color:var(--beje-claro); font-family:'DM Mono',monospace;">
+            {{ total_cartao | moeda }}
+        </div>
+        <div class="small" style="color:rgba(201,185,154,0.5);">
+            {{ transacoes | length }} compra(s) registrada(s)
+        </div>
+    </div>
+
+    <!-- Botão para adicionar transação de cartão -->
+    <div class="d-grid mb-3">
+        <a href="{{ url_for('transacoes.adicionar') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-plus-circle me-2" style="color:var(--vinho-claro);"></i>
+            Registrar Compra no Cartão
+        </a>
+    </div>
+
+    <!-- Lista de transações do cartão -->
+    <div class="card">
+        <div class="list-group list-group-flush">
+            {% for transacao in transacoes %}
+                <div class="list-group-item lista-transacao d-flex align-items-center gap-2 py-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:36px; height:36px;
+                                background: rgba(107,30,53,0.15);
+                                border: 1px solid rgba(107,30,53,0.25);">
+                        <i class="bi {{ transacao.categoria.icone }}"
+                           style="color: {{ transacao.categoria.cor }};"></i>
+                    </div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-semibold text-truncate small"
+                             style="color:var(--beje-claro);">
+                            {{ transacao.descricao }}
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--beje-escuro);">
+                            {{ transacao.categoria.nome }}
+                            · {{ transacao.data_transacao.strftime('%d/%m/%Y') }}
+                            {% if transacao.observacoes %}
+                                · {{ transacao.observacoes }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span class="fw-bold small"
+                          style="color:#E07070; font-family:'DM Mono',monospace;">
+                        -{{ transacao.valor | moeda }}
+                    </span>
+                    <form method="POST"
+                          action="{{ url_for('transacoes.excluir', id=transacao.id) }}"
+                          onsubmit="return confirm('Remover esta compra?')">
+                        <input type="hidden" name="origem" value="dashboard">
+                        <button type="submit" class="btn btn-link btn-sm p-0"
+                                style="color:var(--beje-escuro);">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="list-group-item text-center py-5"
+                     style="color:var(--beje-escuro);">
+                    <i class="bi bi-credit-card d-block fs-2 mb-2"
+                       style="color:var(--vinho-claro);"></i>
+                    Nenhuma compra no cartão registrada para este mês.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

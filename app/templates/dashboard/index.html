@@ -1,0 +1,411 @@
+{% extends "base.html" %}
+{% block titulo %}Dashboard — {{ nome_mes }}/{{ ano }}{% endblock %}
+
+{% block estilos_extras %}
+<style>
+    .card-resumo { border-left: 3px solid; border-radius: 13px; }
+    .card-receita    { border-left-color: #4CAF82; }
+    .card-disponivel { border-left-color: #8B2A45; }
+    .card-gasto      { border-left-color: #C9B99A; }
+    .card-saldo-success { border-left-color: #4CAF82; }
+    .card-saldo-danger  { border-left-color: #E07070; }
+
+    .progress { height: 18px; border-radius: 10px; }
+
+    .linha-transacao { transition: background-color 0.2s ease; }
+    .linha-transacao:hover { background: rgba(107,30,53,0.1) !important; }
+
+    #form-rapido {
+        background: rgba(107,30,53,0.1) !important;
+        border: 1px solid rgba(107,30,53,0.4) !important;
+        border-radius: 13px !important;
+    }
+
+    .chart-container { position: relative; height: 220px; }
+
+    /* Título do quick-add */
+    #form-rapido h6 { color: #C9B99A; font-family: 'Syne', sans-serif; }
+</style>
+{% endblock %}
+
+{% block conteudo %}
+<div class="container-fluid px-3 pt-3">
+
+    <!-- ============================================================
+         CABEÇALHO: navegação entre meses
+    ============================================================ -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="{{ url_for('dashboard.dashboard', ano=ano_anterior, mes=mes_anterior) }}"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-chevron-left"></i>
+        </a>
+        <div class="text-center">
+            <h5 class="mb-0 fw-bold" style="font-family:'Syne',sans-serif; letter-spacing:-1px;">
+                {{ nome_mes }} / {{ ano }}
+            </h5>
+            <small>
+                <a href="{{ url_for('orcamento.configurar', ano=ano, mes=mes) }}"
+                   class="text-decoration-none" style="color: var(--beje-escuro);">
+                    <i class="bi bi-gear me-1"></i>Editar orçamento
+                </a>
+            </small>
+        </div>
+        <a href="{{ url_for('dashboard.dashboard', ano=proximo_ano, mes=proximo_mes) }}"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-chevron-right"></i>
+        </a>
+    </div>
+
+    <!-- ============================================================
+         LINHA 1: 4 CARDS DE RESUMO
+    ============================================================ -->
+    <div class="row g-2 mb-3">
+        <!-- Card: Receita Prevista -->
+        <div class="col-6 col-md-3">
+            <div class="card card-resumo card-receita h-100 p-3">
+                <div class="small mb-1" style="color:var(--beje-escuro);">
+                    <i class="bi bi-arrow-down-circle me-1"></i>Receita Prevista
+                </div>
+                <div class="fw-bold fs-5" style="color:#4CAF82; font-family:'DM Mono',monospace;">
+                    {{ orcamento.receita_prevista | moeda }}
+                </div>
+                <div style="font-size:0.75rem; color:var(--beje-escuro);">
+                    Poupança: {{ orcamento.valor_poupanca | moeda }}
+                    ({{ orcamento.percentual_poupanca | int }}%)
+                </div>
+            </div>
+        </div>
+
+        <!-- Card: Disponível para Gastos -->
+        <div class="col-6 col-md-3">
+            <div class="card card-resumo card-disponivel h-100 p-3">
+                <div class="small mb-1" style="color:var(--beje-escuro);">
+                    <i class="bi bi-wallet me-1"></i>Disponível
+                </div>
+                <div class="fw-bold fs-5" style="color:var(--vinho-claro); font-family:'DM Mono',monospace;">
+                    {{ orcamento.disponivel_para_gastos | moeda }}
+                </div>
+                <div style="font-size:0.75rem; color:var(--beje-escuro);">
+                    {{ (100 - orcamento.percentual_poupanca) | int }}% da receita
+                </div>
+            </div>
+        </div>
+
+        <!-- Card: Total Gasto -->
+        <div class="col-6 col-md-3">
+            <div class="card card-resumo card-gasto h-100 p-3">
+                <div class="small mb-1" style="color:var(--beje-escuro);">
+                    <i class="bi bi-arrow-up-circle me-1"></i>Gasto Até Agora
+                </div>
+                <div class="fw-bold fs-5" style="color:var(--beje); font-family:'DM Mono',monospace;">
+                    {{ orcamento.total_gasto | moeda }}
+                </div>
+                <div style="font-size:0.75rem; color:var(--beje-escuro);">
+                    {{ orcamento.percentual_utilizado | round(1) }}% do disponível
+                </div>
+            </div>
+        </div>
+
+        <!-- Card: Saldo Restante -->
+        <div class="col-6 col-md-3">
+            <div class="card card-resumo card-saldo-{{ cor_saldo }} h-100 p-3">
+                <div class="small mb-1" style="color:var(--beje-escuro);">
+                    <i class="bi bi-piggy-bank me-1"></i>Saldo Restante
+                </div>
+                <div class="fw-bold fs-5 font-monospace
+                            {% if cor_saldo == 'success' %}text-success{% else %}text-danger{% endif %}"
+                     style="font-family:'DM Mono',monospace;">
+                    {{ orcamento.saldo_restante | moeda }}
+                </div>
+                <div style="font-size:0.75rem; color:var(--beje-escuro);">
+                    {% if orcamento.saldo_restante >= 0 %}
+                        Dentro do orçamento
+                    {% else %}
+                        <span style="color:#E07070;">Orçamento estourado!</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         LINHA 2: BARRAS DE PROGRESSO
+    ============================================================ -->
+    <div class="card mb-3 p-3">
+        <div class="mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="fw-semibold" style="color:var(--beje);">Orçamento Utilizado</span>
+                <span style="color:var(--beje-escuro); font-family:'DM Mono',monospace; font-size:0.78rem;">
+                    {{ orcamento.total_gasto | moeda }} de {{ orcamento.disponivel_para_gastos | moeda }}
+                </span>
+            </div>
+            <div class="progress">
+                <div class="progress-bar bg-{{ cor_barra }}"
+                     role="progressbar"
+                     style="width: {{ orcamento.percentual_utilizado }}%"
+                     aria-valuenow="{{ orcamento.percentual_utilizado }}"
+                     aria-valuemin="0" aria-valuemax="100">
+                    {{ orcamento.percentual_utilizado | round(0) | int }}%
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="fw-semibold" style="color:var(--beje);">
+                    <i class="bi bi-piggy-bank me-1" style="color:var(--vinho-claro);"></i>
+                    Poupança Reservada ({{ orcamento.percentual_poupanca | int }}%)
+                </span>
+                <span style="color:var(--vinho-claro); font-family:'DM Mono',monospace; font-size:0.78rem;">
+                    {{ orcamento.valor_poupanca | moeda }}
+                </span>
+            </div>
+            <div class="progress">
+                <div class="progress-bar bg-primary"
+                     role="progressbar"
+                     style="width: 100%"
+                     aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+                    Reservado
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         LINHA 3: GRÁFICOS
+    ============================================================ -->
+    {% if categorias_labels %}
+    <div class="row g-2 mb-3">
+        <div class="col-12 col-md-5">
+            <div class="card p-3 h-100">
+                <h6 class="fw-semibold mb-2" style="font-family:'Syne',sans-serif; color:var(--beje);">
+                    Gastos por Categoria
+                </h6>
+                <div class="chart-container">
+                    <canvas id="graficoDonut"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-7">
+            <div class="card p-3 h-100">
+                <h6 class="fw-semibold mb-2" style="font-family:'Syne',sans-serif; color:var(--beje);">
+                    Gastos por Dia
+                </h6>
+                <div class="chart-container">
+                    <canvas id="graficoBarras"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ============================================================
+         LINHA 4: QUICK-ADD
+    ============================================================ -->
+    <div class="card mb-3 p-3" id="form-rapido">
+        <h6 class="fw-semibold mb-2">
+            <i class="bi bi-plus-circle-fill me-2" style="color:var(--vinho-claro);"></i>
+            <span style="color:var(--beje);">Adicionar Gasto Rápido</span>
+        </h6>
+        <form hx-post="{{ url_for('transacoes.rapido') }}"
+              hx-target="#lista-ultimas"
+              hx-swap="afterbegin"
+              hx-on::after-request="this.reset(); document.getElementById('valor-rapido').focus();"
+              class="row g-2 align-items-end">
+            <div class="col-12 col-sm-3">
+                <label class="form-label small" for="valor-rapido">Valor (R$)</label>
+                <input type="number"
+                       id="valor-rapido"
+                       name="valor"
+                       class="form-control form-control-lg"
+                       placeholder="0,00"
+                       inputmode="decimal"
+                       step="0.01"
+                       min="0.01"
+                       required>
+            </div>
+            <div class="col-12 col-sm-3">
+                <label class="form-label small">Categoria</label>
+                <select name="categoria_id" class="form-select" required>
+                    {% for categoria in categorias_para_quick_add %}
+                        <option value="{{ categoria.id }}">{{ categoria.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-sm-4">
+                <label class="form-label small">Descrição</label>
+                <input type="text"
+                       name="descricao"
+                       class="form-control"
+                       placeholder="Ex: Mercado, Uber, Almoço..."
+                       maxlength="200">
+            </div>
+            <div class="col-12 col-sm-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-plus-lg"></i>
+                    <span class="d-none d-sm-inline">Salvar</span>
+                </button>
+            </div>
+        </form>
+        <div class="mt-2">
+            <a href="{{ url_for('transacoes.adicionar') }}" class="text-decoration-none small"
+               style="color:var(--beje-escuro);">
+                <i class="bi bi-pencil me-1"></i>Formulário completo (com data, observações etc.)
+            </a>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         LINHA 5: ÚLTIMAS TRANSAÇÕES
+    ============================================================ -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold" style="font-family:'Syne',sans-serif;">
+                Últimas Transações
+            </h6>
+            <a href="{{ url_for('transacoes.listar', mes=mes, ano=ano) }}"
+               class="btn btn-sm btn-outline-secondary">
+                Ver todas
+            </a>
+        </div>
+        <div class="list-group list-group-flush" id="lista-ultimas">
+            {% for transacao in ultimas_transacoes %}
+                {% include "transacoes/_linha.html" %}
+            {% else %}
+                <div class="list-group-item text-center py-4" id="aviso-sem-transacoes"
+                     style="color:var(--beje-escuro);">
+                    <i class="bi bi-inbox d-block fs-3 mb-2" style="color:var(--vinho-claro);"></i>
+                    Nenhuma transação neste mês ainda.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+
+{% block scripts_extras %}
+<script>
+const dadosDonut = {
+    labels: {{ categorias_labels | tojson }},
+    valores: {{ categorias_valores | tojson }},
+    cores:   {{ categorias_cores | tojson }},
+};
+
+const dadosBarras = {
+    labels:  {{ dias_labels | tojson }},
+    valores: {{ dias_valores | tojson }},
+};
+
+// Paleta de cores do design para os gráficos
+const chartDefaults = {
+    legendColor: '#A89070',
+    gridColor: 'rgba(107,30,53,0.15)',
+    tickColor: '#6A6A6A',
+    tooltipBg: '#150D10',
+    tooltipBorder: 'rgba(107,30,53,0.5)',
+};
+
+if (dadosDonut.labels.length > 0) {
+    const ctxDonut = document.getElementById("graficoDonut");
+    if (ctxDonut) {
+        new Chart(ctxDonut, {
+            type: "doughnut",
+            data: {
+                labels: dadosDonut.labels,
+                datasets: [{
+                    data: dadosDonut.valores,
+                    backgroundColor: dadosDonut.cores,
+                    borderWidth: 2,
+                    borderColor: '#0F0A0C',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            font: { size: 11, family: 'DM Sans' },
+                            color: chartDefaults.legendColor,
+                            padding: 8
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: chartDefaults.tooltipBg,
+                        borderColor: chartDefaults.tooltipBorder,
+                        borderWidth: 1,
+                        titleColor: '#E8DDD0',
+                        bodyColor: '#C9B99A',
+                        callbacks: {
+                            label: (ctx) => {
+                                const valor = ctx.raw.toLocaleString("pt-BR", {
+                                    style: "currency", currency: "BRL"
+                                });
+                                return ` ${ctx.label}: ${valor}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    const ctxBarras = document.getElementById("graficoBarras");
+    if (ctxBarras) {
+        new Chart(ctxBarras, {
+            type: "bar",
+            data: {
+                labels: dadosBarras.labels,
+                datasets: [{
+                    label: "Gastos do dia",
+                    data: dadosBarras.valores,
+                    backgroundColor: "rgba(107, 30, 53, 0.55)",
+                    borderColor: "#6B1E35",
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    hoverBackgroundColor: "rgba(139, 42, 69, 0.75)",
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: chartDefaults.tooltipBg,
+                        borderColor: chartDefaults.tooltipBorder,
+                        borderWidth: 1,
+                        titleColor: '#E8DDD0',
+                        bodyColor: '#C9B99A',
+                        callbacks: {
+                            label: (ctx) => ctx.raw.toLocaleString("pt-BR", {
+                                style: "currency", currency: "BRL"
+                            })
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: chartDefaults.tickColor, font: { size: 10, family: 'DM Mono' } },
+                        grid: { color: chartDefaults.gridColor },
+                        border: { color: 'rgba(107,30,53,0.2)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: chartDefaults.tickColor,
+                            font: { size: 10, family: 'DM Mono' },
+                            callback: (val) => "R$ " + val.toLocaleString("pt-BR")
+                        },
+                        grid: { color: chartDefaults.gridColor },
+                        border: { color: 'rgba(107,30,53,0.2)' }
+                    }
+                }
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

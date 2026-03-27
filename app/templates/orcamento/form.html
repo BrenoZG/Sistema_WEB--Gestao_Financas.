@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block titulo %}Configurar Orçamento — {{ nome_mes }}/{{ ano }}{% endblock %}
+
+{% block conteudo %}
+<div class="container" style="max-width: 500px;">
+    <div class="py-4">
+        <h5 class="fw-bold mb-1" style="font-family:'Syne',sans-serif; letter-spacing:-1px;">
+            <i class="bi bi-gear-fill me-2" style="color:var(--vinho-claro);"></i>Orçamento Mensal
+        </h5>
+        <p class="mb-4" style="color:var(--beje-escuro);">{{ nome_mes }} / {{ ano }}</p>
+
+        <form method="POST">
+            <!-- Receita prevista -->
+            <div class="mb-3">
+                <label class="form-label" for="receita_prevista">
+                    Receita Prevista (R$)
+                </label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text">R$</span>
+                    <input type="number"
+                           id="receita_prevista"
+                           name="receita_prevista"
+                           class="form-control form-control-lg"
+                           placeholder="0,00"
+                           inputmode="decimal"
+                           step="0.01"
+                           min="0"
+                           value="{{ orcamento.receita_prevista if orcamento else '' }}"
+                           autofocus
+                           required>
+                </div>
+                <div class="form-text">
+                    Informe o total que você espera receber neste mês (salário, freelances etc.)
+                </div>
+            </div>
+
+            <!-- Percentual de poupança -->
+            <div class="mb-4">
+                <label class="form-label" for="percentual_poupanca">
+                    Reserva para Poupança (%)
+                </label>
+                <div class="input-group">
+                    <input type="number"
+                           id="percentual_poupanca"
+                           name="percentual_poupanca"
+                           class="form-control"
+                           placeholder="10"
+                           inputmode="decimal"
+                           step="0.5"
+                           min="0"
+                           max="100"
+                           value="{{ orcamento.percentual_poupanca if orcamento else '10' }}"
+                           required>
+                    <span class="input-group-text">%</span>
+                </div>
+                <div class="form-text">
+                    Padrão: 10%. Este valor é reservado mentalmente — o sistema calcula quanto você pode gastar.
+                </div>
+            </div>
+
+            <!-- Preview do cálculo -->
+            <div class="card mb-4 p-3 card-preview-orcamento" id="preview-calculo">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="small mb-1" style="color:var(--beje-escuro);">Poupança</div>
+                        <strong id="preview-poupanca"
+                                style="color:#4CAF82; font-family:'DM Mono',monospace;">
+                            R$ 0,00
+                        </strong>
+                    </div>
+                    <div class="col-4">
+                        <div class="small mb-1" style="color:var(--beje-escuro);">Disponível para Gastos</div>
+                        <strong id="preview-disponivel"
+                                style="color:var(--vinho-claro); font-family:'DM Mono',monospace;">
+                            R$ 0,00
+                        </strong>
+                    </div>
+                    <div class="col-4">
+                        <div class="small mb-1" style="color:var(--beje-escuro);">Total</div>
+                        <strong id="preview-total"
+                                style="color:var(--beje); font-family:'DM Mono',monospace;">
+                            R$ 0,00
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-check-lg me-2"></i>Salvar Orçamento
+                </button>
+                <a href="{{ url_for('dashboard.dashboard', ano=ano, mes=mes) }}"
+                   class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_extras %}
+<script>
+function atualizarPreview() {
+    const receita = parseFloat(document.getElementById("receita_prevista").value) || 0;
+    const pct = parseFloat(document.getElementById("percentual_poupanca").value) || 0;
+    const poupanca = receita * pct / 100;
+    const disponivel = receita - poupanca;
+
+    const fmt = (val) => val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+    document.getElementById("preview-poupanca").textContent = fmt(poupanca);
+    document.getElementById("preview-disponivel").textContent = fmt(disponivel);
+    document.getElementById("preview-total").textContent = fmt(receita);
+}
+
+document.getElementById("receita_prevista").addEventListener("input", atualizarPreview);
+document.getElementById("percentual_poupanca").addEventListener("input", atualizarPreview);
+atualizarPreview();
+</script>
+{% endblock %}

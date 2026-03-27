@@ -1,0 +1,97 @@
+"""
+Factory da aplicação Flask.
+
+Por que usar uma factory (criar_app)?
+- Permite criar múltiplas instâncias do app (útil para testes)
+- Evita importações circulares
+- Centraliza toda a configuração em um lugar só
+"""
+import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+# Instância do banco — criada aqui, inicializada dentro do criar_app
+db = SQLAlchemy()
+
+
+def criar_app() -> Flask:
+    """Cria e configura a aplicação Flask.
+
+    Returns:
+        Flask: Instância configurada da aplicação.
+    """
+    app = Flask(__name__)
+
+    # --- Configurações ---
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-inseguro-mude-em-producao")
+
+    # Banco de dados:
+    # - Em produção (Railway): DATABASE_URL é injetada automaticamente pelo Railway
+    # - Em desenvolvimento local: cai no SQLite
+    database_url = os.getenv("DATABASE_URL", "sqlite:///financeiro.db")
+    # Railway às vezes usa o prefixo legado "postgres://" — corrige para "postgresql://"
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+
+    # Desativa rastreamento de modificações (economiza memória)
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # --- Inicializa extensões ---
+    db.init_app(app)
+
+    # --- Registra blueprints (grupos de rotas) ---
+    from app.routes.dashboard import dashboard_bp
+    from app.routes.transacoes import transacoes_bp
+    from app.routes.receitas import receitas_bp
+    from app.routes.cartao import cartao_bp
+    from app.routes.orcamento import orcamento_bp
+
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(transacoes_bp, url_prefix="/transacoes")
+    app.register_blueprint(receitas_bp, url_prefix="/receitas")
+    app.register_blueprint(cartao_bp, url_prefix="/cartao")
+    app.register_blueprint(orcamento_bp, url_prefix="/configurar")
+
+    # --- Filtro de formatação de moeda (usado nos templates) ---
+    @app.template_filter("moeda")
+    def filtro_moeda(valor: float) -> str:
+        """Formata um número como moeda brasileira. Ex: 1234.56 → R$ 1.234,56"""
+        if valor is None:
+            return "R$ 0,00"
+        formatado = f"{valor:,.2f}"
+        # Converte separadores: 1,234.56 → 1.234,56
+        return "R$ " + formatado.replace(",", "X").replace(".", ",").replace("X", ".")
+
+    # --- Cria tabelas e popula categorias padrão ---
+    with app.app_context():
+        from app.models import OrcamentoMensal, Categoria, Transacao, FonteReceita
+        db.create_all()
+        _popular_categorias_padrao()
+
+    return app
+
+
+def _popular_categorias_padrao() -> None:
+    """Insere as categorias padrão se a tabela estiver vazia.
+
+    Executado uma única vez na primeira inicialização do app.
+    """
+    from app.models import Categoria
+
+    if Categoria.query.count() > 0:
+        return  # Já populado, não faz nada
+
+    categorias_padrao = [
+        Categoria(nome="Aluguel",           icone="bi-house-fill",        cor="#e74c3c", eh_cartao_credito=False),
+        Categoria(nome="Cartão Santander",  icone="bi-credit-card-fill",  cor="#e67e22", eh_cartao_credito=True),
+        Categoria(nome="Alimentação",       icone="bi-cart-fill",         cor="#2ecc71", eh_cartao_credito=False),
+        Categoria(nome="Transporte",        icone="bi-car-front-fill",    cor="#3498db", eh_cartao_credito=False),
+        Categoria(nome="Saúde",             icone="bi-heart-pulse-fill",  cor="#9b59b6", eh_cartao_credito=False),
+        Categoria(nome="Lazer",             icone="bi-controller",        cor="#1abc9c", eh_cartao_credito=False),
+        Categoria(nome="Educação",          icone="bi-book-fill",         cor="#f39c12", eh_cartao_credito=False),
+        Categoria(nome="Outros",            icone="bi-three-dots",        cor="#95a5a6", eh_cartao_credito=False),
+    ]
+
+    db.session.add_all(categorias_padrao)
+    db.session.commit()

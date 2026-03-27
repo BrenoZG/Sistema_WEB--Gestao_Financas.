@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block titulo %}Transações{% endblock %}
+
+{% block conteudo %}
+<div class="container-fluid px-3 pt-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0" style="font-family:'Syne',sans-serif; letter-spacing:-1px;">
+            Transações
+        </h5>
+        <a href="{{ url_for('transacoes.adicionar') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Adicionar
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <form method="GET" class="card p-3 mb-3">
+        <div class="row g-2">
+            <div class="col-6 col-md-2">
+                <select name="mes" class="form-select form-select-sm">
+                    {% for n, nome in [(1,'Jan'),(2,'Fev'),(3,'Mar'),(4,'Abr'),(5,'Mai'),(6,'Jun'),
+                                       (7,'Jul'),(8,'Ago'),(9,'Set'),(10,'Out'),(11,'Nov'),(12,'Dez')] %}
+                        <option value="{{ n }}" {% if n == mes %}selected{% endif %}>{{ nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <input type="number" name="ano" class="form-control form-control-sm"
+                       value="{{ ano }}" min="2020" max="2099">
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="categoria_id" class="form-select form-select-sm">
+                    <option value="">Todas as categorias</option>
+                    {% for cat in categorias %}
+                        <option value="{{ cat.id }}"
+                                {% if cat.id == categoria_id_filtro %}selected{% endif %}>
+                            {{ cat.nome }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <select name="tipo" class="form-select form-select-sm">
+                    <option value="" {% if not tipo_filtro %}selected{% endif %}>Todos</option>
+                    <option value="gasto"   {% if tipo_filtro == 'gasto' %}selected{% endif %}>Gastos</option>
+                    <option value="receita" {% if tipo_filtro == 'receita' %}selected{% endif %}>Receitas</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Total filtrado -->
+    {% if transacoes %}
+    <div class="d-flex justify-content-between small mb-2 px-1"
+         style="color:var(--beje-escuro);">
+        <span>{{ transacoes | length }} transação(ões)</span>
+        <span style="font-family:'DM Mono',monospace;">
+            Total: <strong style="color:var(--beje);">{{ transacoes | sum(attribute='valor') | moeda }}</strong>
+        </span>
+    </div>
+    {% endif %}
+
+    <!-- Lista -->
+    <div class="card">
+        <div class="list-group list-group-flush">
+            {% for transacao in transacoes %}
+                <div class="list-group-item lista-transacao d-flex align-items-center gap-2 py-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:36px; height:36px;
+                                background: rgba(107,30,53,0.15);
+                                border: 1px solid rgba(107,30,53,0.25);">
+                        <i class="bi {{ transacao.categoria.icone }}"
+                           style="color: {{ transacao.categoria.cor }};"></i>
+                    </div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-semibold text-truncate small"
+                             style="color:var(--beje-claro);">
+                            {{ transacao.descricao }}
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--beje-escuro);">
+                            {{ transacao.categoria.nome }}
+                            {% if transacao.eh_cartao_credito %}
+                                <span class="badge ms-1"
+                                      style="background:rgba(201,185,154,0.1)!important;
+                                             border:1px solid rgba(201,185,154,0.3);
+                                             color:var(--beje)!important;
+                                             font-size:0.6rem; letter-spacing:1px;">
+                                    Santander
+                                </span>
+                            {% endif %}
+                            · {{ transacao.data_transacao.strftime('%d/%m/%Y') }}
+                            {% if transacao.observacoes %}
+                                · <em style="color:var(--cinza-claro);">{{ transacao.observacoes }}</em>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-end flex-shrink-0">
+                        <span class="fw-bold small" style="
+                            font-family:'DM Mono',monospace;
+                            color: {% if transacao.tipo == 'receita' %}#4CAF82{% else %}#E07070{% endif %};">
+                            {% if transacao.tipo == 'receita' %}+{% else %}-{% endif %}
+                            {{ transacao.valor | moeda }}
+                        </span>
+                    </div>
+                    <form method="POST"
+                          action="{{ url_for('transacoes.excluir', id=transacao.id) }}"
+                          class="flex-shrink-0"
+                          onsubmit="return confirm('Remover este lançamento?')">
+                        <input type="hidden" name="origem" value="lista">
+                        <button type="submit" class="btn btn-link btn-sm p-0"
+                                style="color:var(--beje-escuro);">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="list-group-item text-center py-5"
+                     style="color:var(--beje-escuro);">
+                    <i class="bi bi-inbox d-block fs-2 mb-2"
+                       style="color:var(--vinho-claro);"></i>
+                    Nenhuma transação encontrada para os filtros selecionados.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

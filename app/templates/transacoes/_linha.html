@@ -1,0 +1,58 @@
+<!--
+    Linha de uma transação — usada no dashboard e na lista completa.
+    Partial HTML reutilizável. HTMX insere após o quick-add.
+-->
+<div class="list-group-item lista-transacao d-flex align-items-center gap-2 py-2">
+    <!-- Ícone da categoria -->
+    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+         style="width:36px; height:36px;
+                background: rgba(107,30,53,0.15);
+                border: 1px solid rgba(107,30,53,0.25);">
+        <i class="bi {{ transacao.categoria.icone }}"
+           style="color: {{ transacao.categoria.cor }}; font-size: 1rem;"></i>
+    </div>
+
+    <!-- Descrição e data -->
+    <div class="flex-grow-1 overflow-hidden">
+        <div class="fw-semibold text-truncate small" style="color:var(--beje-claro);">
+            {{ transacao.descricao }}
+        </div>
+        <div style="font-size:0.72rem; color:var(--beje-escuro);">
+            {{ transacao.categoria.nome }}
+            {% if transacao.eh_cartao_credito %}
+                <span class="badge ms-1" style="
+                    background: rgba(201,185,154,0.1) !important;
+                    border: 1px solid rgba(201,185,154,0.3);
+                    color: var(--beje) !important;
+                    font-size:0.6rem; letter-spacing:1px;">
+                    Santander
+                </span>
+            {% endif %}
+            · {{ transacao.data_transacao.strftime('%d/%m') }}
+        </div>
+    </div>
+
+    <!-- Valor -->
+    <div class="text-end flex-shrink-0">
+        <span class="fw-bold small" style="
+            font-family:'DM Mono',monospace;
+            color: {% if transacao.tipo == 'receita' %}#4CAF82{% else %}#E07070{% endif %};">
+            {% if transacao.tipo == 'receita' %}+{% else %}-{% endif %}
+            {{ transacao.valor | moeda }}
+        </span>
+    </div>
+
+    <!-- Botão excluir -->
+    <form method="POST"
+          action="{{ url_for('transacoes.excluir', id=transacao.id) }}"
+          class="flex-shrink-0"
+          onsubmit="return confirm('Remover \"{{ transacao.descricao }}\"?')">
+        <input type="hidden" name="origem" value="dashboard">
+        <button type="submit"
+                class="btn btn-link btn-sm p-0"
+                title="Remover"
+                style="color:var(--beje-escuro);">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </form>
+</div>

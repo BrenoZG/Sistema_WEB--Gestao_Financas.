@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Financeiro{% endblock %} — Gestão Financeira</title>
+
+    <!-- Google Fonts: Syne, DM Sans, DM Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- CSS customizado (identidade visual) -->
+    <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
+
+    {% block estilos_extras %}{% endblock %}
+</head>
+<body class="bg-light">
+
+    <!-- Cursor customizado -->
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+    <div id="cursor-ring-inner"></div>
+
+    <!-- =========================================================
+         NAVBAR DESKTOP (visível em telas médias e grandes)
+    ========================================================= -->
+    <nav class="navbar navbar-expand-md d-none d-md-flex">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-wallet2 me-2"></i>Financeiro
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link {% if request.endpoint and 'dashboard' in request.endpoint %}active{% endif %}"
+                   href="/">
+                    <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                </a>
+                <a class="nav-link {% if request.endpoint and 'transacoes' in request.endpoint %}active{% endif %}"
+                   href="/transacoes">
+                    <i class="bi bi-list-ul me-1"></i>Transações
+                </a>
+                <a class="nav-link {% if request.endpoint and 'cartao' in request.endpoint %}active{% endif %}"
+                   href="/cartao">
+                    <i class="bi bi-credit-card me-1"></i>Cartão Santander
+                </a>
+                <a class="nav-link {% if request.endpoint and 'receitas' in request.endpoint %}active{% endif %}"
+                   href="/receitas">
+                    <i class="bi bi-cash-stack me-1"></i>Receitas
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- =========================================================
+         HEADER MOBILE (visível apenas no celular)
+    ========================================================= -->
+    <header class="d-flex d-md-none align-items-center justify-content-between px-3 py-2">
+        <span class="fw-bold fs-5">
+            <i class="bi bi-wallet2 me-2"></i>Financeiro
+        </span>
+        {% block header_acao_mobile %}{% endblock %}
+    </header>
+
+    <!-- =========================================================
+         FLASH MESSAGES
+    ========================================================= -->
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% if mensagens %}
+            <div class="container-fluid mt-2 px-3">
+                {% for categoria, mensagem in mensagens %}
+                    <div class="alert alert-{{ 'success' if categoria == 'sucesso' else 'danger' if categoria == 'erro' else 'info' }} alert-dismissible fade show mb-2"
+                         role="alert">
+                        <i class="bi bi-{{ 'check-circle' if categoria == 'sucesso' else 'exclamation-triangle' if categoria == 'erro' else 'info-circle' }} me-2"></i>
+                        {{ mensagem }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- =========================================================
+         CONTEÚDO PRINCIPAL
+    ========================================================= -->
+    <main class="container-fluid pb-5 pb-md-3">
+        {% block conteudo %}{% endblock %}
+    </main>
+
+    <!-- =========================================================
+         NAVEGAÇÃO INFERIOR MOBILE
+    ========================================================= -->
+    <nav class="navbar fixed-bottom d-flex d-md-none py-0" id="nav-mobile">
+        <div class="container-fluid justify-content-around p-0">
+            <a href="/" class="nav-mobile-item text-center py-2
+               {% if request.endpoint and 'dashboard' in request.endpoint %}text-warning{% endif %}">
+                <i class="bi bi-speedometer2 d-block fs-5"></i>
+                <small>Início</small>
+            </a>
+            <a href="/transacoes/adicionar" class="nav-mobile-item text-center py-2">
+                <div class="btn-adicionar-mobile">
+                    <i class="bi bi-plus-lg fs-5"></i>
+                </div>
+                <small>Adicionar</small>
+            </a>
+            <a href="/transacoes" class="nav-mobile-item text-center py-2
+               {% if request.endpoint and 'transacoes' in request.endpoint %}text-warning{% endif %}">
+                <i class="bi bi-list-ul d-block fs-5"></i>
+                <small>Histórico</small>
+            </a>
+            <a href="/cartao" class="nav-mobile-item text-center py-2
+               {% if request.endpoint and 'cartao' in request.endpoint %}text-warning{% endif %}">
+                <i class="bi bi-credit-card d-block fs-5"></i>
+                <small>Cartão</small>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <!-- JS customizado -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    {% block scripts_extras %}{% endblock %}
+</body>
+</html>
