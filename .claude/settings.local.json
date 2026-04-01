@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python adicionar_categorias.py)",
+      "Bash(python -c \":*)",
+      "Bash(ngrok version:*)"
+    ]
+  }
+}

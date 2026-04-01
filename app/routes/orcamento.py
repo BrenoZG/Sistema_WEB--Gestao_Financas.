@@ -58,6 +58,29 @@ def configurar(ano: int, mes: int):
     )
 
 
+@orcamento_bp.route("/<int:ano>/<int:mes>/excluir", methods=["POST"])
+def excluir(ano: int, mes: int):
+    """Exclui o orçamento do mês, incluindo todas as transações vinculadas.
+
+    Atenção: cascade="all, delete-orphan" no modelo garante que
+    as transações e fontes de receita do mês também são apagadas.
+    """
+    orcamento = OrcamentoMensal.query.filter_by(ano=ano, mes=mes).first_or_404()
+
+    total_transacoes = len(orcamento.transacoes)
+    total_receitas = len(orcamento.fontes_receita)
+
+    db.session.delete(orcamento)
+    db.session.commit()
+
+    flash(
+        f"Orçamento de {_nome_mes(mes)}/{ano} excluído. "
+        f"({total_transacoes} transação(ões) e {total_receitas} receita(s) removidas)",
+        "sucesso"
+    )
+    return redirect(url_for("dashboard.dashboard", ano=ano, mes=mes))
+
+
 def _nome_mes(mes: int) -> str:
     """Retorna o nome do mês em português."""
     nomes = [

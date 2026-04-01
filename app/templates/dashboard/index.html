@@ -4,27 +4,18 @@
 {% block estilos_extras %}
 <style>
     .card-resumo { border-left: 3px solid; border-radius: 13px; }
-    .card-receita    { border-left-color: #4CAF82; }
-    .card-disponivel { border-left-color: #8B2A45; }
-    .card-gasto      { border-left-color: #C9B99A; }
-    .card-saldo-success { border-left-color: #4CAF82; }
-    .card-saldo-danger  { border-left-color: #E07070; }
+    .card-receita    { border-left-color: #1A9A6A; }
+    .card-disponivel { border-left-color: #8B2A48; }
+    .card-gasto      { border-left-color: #8B6878; }
+    .card-saldo-success { border-left-color: #1A9A6A; }
+    .card-saldo-danger  { border-left-color: #C03050; }
 
     .progress { height: 18px; border-radius: 10px; }
 
     .linha-transacao { transition: background-color 0.2s ease; }
-    .linha-transacao:hover { background: rgba(107,30,53,0.1) !important; }
-
-    #form-rapido {
-        background: rgba(107,30,53,0.1) !important;
-        border: 1px solid rgba(107,30,53,0.4) !important;
-        border-radius: 13px !important;
-    }
+    .linha-transacao:hover { background: var(--vinho-pale) !important; }
 
     .chart-container { position: relative; height: 220px; }
-
-    /* Título do quick-add */
-    #form-rapido h6 { color: #C9B99A; font-family: 'Syne', sans-serif; }
 </style>
 {% endblock %}
 
@@ -202,9 +193,9 @@
          LINHA 4: QUICK-ADD
     ============================================================ -->
     <div class="card mb-3 p-3" id="form-rapido">
-        <h6 class="fw-semibold mb-2">
+        <h6 class="fw-semibold mb-2" style="font-family:'Syne',sans-serif; color:var(--beje);">
             <i class="bi bi-plus-circle-fill me-2" style="color:var(--vinho-claro);"></i>
-            <span style="color:var(--beje);">Adicionar Gasto Rápido</span>
+            Adicionar Gasto Rápido
         </h6>
         <form hx-post="{{ url_for('transacoes.rapido') }}"
               hx-target="#lista-ultimas"
@@ -297,13 +288,15 @@ const dadosBarras = {
     valores: {{ dias_valores | tojson }},
 };
 
-// Paleta de cores do design para os gráficos
+// Paleta de cores do design para os gráficos (tema claro)
 const chartDefaults = {
-    legendColor: '#A89070',
-    gridColor: 'rgba(107,30,53,0.15)',
-    tickColor: '#6A6A6A',
-    tooltipBg: '#150D10',
-    tooltipBorder: 'rgba(107,30,53,0.5)',
+    legendColor: '#8B6878',
+    gridColor: 'rgba(107,30,56,0.07)',
+    tickColor: '#8B6878',
+    tooltipBg: '#FFFFFF',
+    tooltipBorder: 'rgba(107,30,56,0.18)',
+    tooltipTitle: '#1C0A12',
+    tooltipBody: '#5A3045',
 };
 
 if (dadosDonut.labels.length > 0) {
@@ -317,7 +310,7 @@ if (dadosDonut.labels.length > 0) {
                     data: dadosDonut.valores,
                     backgroundColor: dadosDonut.cores,
                     borderWidth: 2,
-                    borderColor: '#0F0A0C',
+                    borderColor: '#FFFFFF',
                 }]
             },
             options: {
@@ -336,8 +329,9 @@ if (dadosDonut.labels.length > 0) {
                         backgroundColor: chartDefaults.tooltipBg,
                         borderColor: chartDefaults.tooltipBorder,
                         borderWidth: 1,
-                        titleColor: '#E8DDD0',
-                        bodyColor: '#C9B99A',
+                        titleColor: chartDefaults.tooltipTitle,
+                        bodyColor: chartDefaults.tooltipBody,
+                        boxShadow: '0 4px 12px rgba(92,18,40,0.10)',
                         callbacks: {
                             label: (ctx) => {
                                 const valor = ctx.raw.toLocaleString("pt-BR", {
@@ -361,11 +355,11 @@ if (dadosDonut.labels.length > 0) {
                 datasets: [{
                     label: "Gastos do dia",
                     data: dadosBarras.valores,
-                    backgroundColor: "rgba(107, 30, 53, 0.55)",
-                    borderColor: "#6B1E35",
+                    backgroundColor: "rgba(107, 30, 56, 0.32)",
+                    borderColor: "#6B1E38",
                     borderWidth: 1,
                     borderRadius: 5,
-                    hoverBackgroundColor: "rgba(139, 42, 69, 0.75)",
+                    hoverBackgroundColor: "rgba(107, 30, 56, 0.52)",
                 }]
             },
             options: {
@@ -377,8 +371,8 @@ if (dadosDonut.labels.length > 0) {
                         backgroundColor: chartDefaults.tooltipBg,
                         borderColor: chartDefaults.tooltipBorder,
                         borderWidth: 1,
-                        titleColor: '#E8DDD0',
-                        bodyColor: '#C9B99A',
+                        titleColor: chartDefaults.tooltipTitle,
+                        bodyColor: chartDefaults.tooltipBody,
                         callbacks: {
                             label: (ctx) => ctx.raw.toLocaleString("pt-BR", {
                                 style: "currency", currency: "BRL"

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block titulo %}Categorias{% endblock %}
+
+{% block conteudo %}
+<div class="container" style="max-width: 680px;">
+    <div class="py-3">
+
+        <h5 class="fw-bold mb-4" style="font-family:'Syne',sans-serif; letter-spacing:-1px;">
+            <i class="bi bi-tags-fill me-2" style="color:var(--vinho-claro);"></i>Categorias
+        </h5>
+
+        <!-- ============================================================
+             FORMULÁRIO: ADICIONAR NOVA CATEGORIA
+        ============================================================ -->
+        <div class="card mb-4 p-3">
+            <h6 class="fw-semibold mb-3" style="font-family:'Syne',sans-serif; color:var(--beje);">
+                <i class="bi bi-plus-circle me-2" style="color:var(--vinho-claro);"></i>Nova Categoria
+            </h6>
+            <form method="POST" action="{{ url_for('categorias.adicionar') }}">
+                <div class="row g-2">
+
+                    <!-- Nome -->
+                    <div class="col-12 col-sm-4">
+                        <label class="form-label small">Nome</label>
+                        <input type="text" name="nome" class="form-control"
+                               placeholder="Ex: Academia, Pet, Streaming..."
+                               maxlength="50" required>
+                    </div>
+
+                    <!-- Ícone Bootstrap Icons -->
+                    <div class="col-12 col-sm-3">
+                        <label class="form-label small">
+                            Ícone
+                            <a href="https://icons.getbootstrap.com" target="_blank"
+                               class="text-decoration-none ms-1" style="font-size:0.7rem; color:var(--vinho-claro);">
+                                ver lista <i class="bi bi-box-arrow-up-right"></i>
+                            </a>
+                        </label>
+                        <div class="input-group">
+                            <input type="text" name="icone" id="campo-icone"
+                                   class="form-control form-control-sm"
+                                   placeholder="bi-tag-fill"
+                                   value="bi-tag-fill"
+                                   maxlength="50">
+                            <span class="input-group-text" id="preview-icone">
+                                <i class="bi bi-tag-fill" id="icone-preview-el"></i>
+                            </span>
+                        </div>
+                        <div class="form-text" style="font-size:0.68rem;">
+                            Digite o nome do ícone (ex: bi-star-fill)
+                        </div>
+                    </div>
+
+                    <!-- Cor -->
+                    <div class="col-6 col-sm-2">
+                        <label class="form-label small">Cor</label>
+                        <input type="color" name="cor" class="form-control form-control-color w-100"
+                               value="#8B2A45" title="Escolha a cor">
+                    </div>
+
+                    <!-- Cartão de crédito? -->
+                    <div class="col-6 col-sm-2 d-flex align-items-end pb-1">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   name="eh_cartao_credito" id="eh_cartao">
+                            <label class="form-check-label small" for="eh_cartao"
+                                   style="color:var(--beje-escuro);">
+                                <i class="bi bi-credit-card me-1"
+                                   style="color:var(--vinho-claro);"></i>Cartão
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botão -->
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary btn-sm px-4">
+                            <i class="bi bi-plus-lg me-1"></i>Adicionar Categoria
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- ============================================================
+             LISTA DE CATEGORIAS EXISTENTES
+        ============================================================ -->
+        <div class="card">
+            <div class="list-group list-group-flush">
+                {% for cat in categorias %}
+                    <div class="list-group-item d-flex align-items-center gap-3 py-2">
+
+                        <!-- Ícone com cor -->
+                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                             style="width:38px; height:38px;
+                                    background: {{ cat.cor }}22;
+                                    border: 1px solid {{ cat.cor }}55;">
+                            <i class="bi {{ cat.icone }}" style="color:{{ cat.cor }};"></i>
+                        </div>
+
+                        <!-- Nome e info -->
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold small" style="color:var(--beje-claro);">
+                                {{ cat.nome }}
+                                {% if cat.eh_cartao_credito %}
+                                    <span class="badge ms-1"
+                                          style="background:rgba(107,30,53,0.2)!important;
+                                                 border:1px solid rgba(107,30,53,0.4);
+                                                 color:var(--beje)!important;
+                                                 font-size:0.6rem; letter-spacing:1px;">
+                                        Cartão
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size:0.7rem; color:var(--beje-escuro);">
+                                {{ cat.icone }} · {{ uso[cat.id] }} transação(ões)
+                            </div>
+                        </div>
+
+                        <!-- Cor visual -->
+                        <div class="flex-shrink-0 rounded-circle"
+                             style="width:16px; height:16px; background:{{ cat.cor }};"></div>
+
+                        <!-- Botão excluir -->
+                        {% if uso[cat.id] == 0 %}
+                            <form method="POST"
+                                  action="{{ url_for('categorias.excluir', id=cat.id) }}"
+                                  class="flex-shrink-0"
+                                  onsubmit="return confirm('Excluir a categoria \"{{ cat.nome }}\"?')">
+                                <button type="submit" class="btn btn-link btn-sm p-0"
+                                        style="color:var(--beje-escuro);" title="Excluir">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        {% else %}
+                            <!-- Bloqueado: tem transações vinculadas -->
+                            <span class="flex-shrink-0" style="color:var(--beje-escuro); font-size:0.75rem;"
+                                  title="Há transações vinculadas — não pode excluir">
+                                <i class="bi bi-lock"></i>
+                            </span>
+                        {% endif %}
+
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <p class="mt-3 small" style="color:var(--beje-escuro);">
+            <i class="bi bi-lock me-1"></i>
+            Categorias com transações vinculadas não podem ser excluídas (cadeado).
+            Remova ou reatribua as transações antes.
+        </p>
+
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts_extras %}
+<script>
+// Preview do ícone em tempo real enquanto o usuário digita
+const campoIcone = document.getElementById("campo-icone");
+const elPreview  = document.getElementById("icone-preview-el");
+
+campoIcone.addEventListener("input", () => {
+    const val = campoIcone.value.trim();
+    // Remove todas as classes bi-* anteriores e aplica a nova
+    elPreview.className = "bi " + (val || "bi-tag-fill");
+});
+</script>
+{% endblock %}

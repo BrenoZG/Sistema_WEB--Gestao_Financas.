@@ -24,16 +24,7 @@ def criar_app() -> Flask:
 
     # --- Configurações ---
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-inseguro-mude-em-producao")
-
-    # Banco de dados:
-    # - Em produção (Railway): DATABASE_URL é injetada automaticamente pelo Railway
-    # - Em desenvolvimento local: cai no SQLite
-    database_url = os.getenv("DATABASE_URL", "sqlite:///financeiro.db")
-    # Railway às vezes usa o prefixo legado "postgres://" — corrige para "postgresql://"
-    if database_url.startswith("postgres://"):
-        database_url = database_url.replace("postgres://", "postgresql://", 1)
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///financeiro.db"
     # Desativa rastreamento de modificações (economiza memória)
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -46,12 +37,14 @@ def criar_app() -> Flask:
     from app.routes.receitas import receitas_bp
     from app.routes.cartao import cartao_bp
     from app.routes.orcamento import orcamento_bp
+    from app.routes.categorias import categorias_bp
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(transacoes_bp, url_prefix="/transacoes")
     app.register_blueprint(receitas_bp, url_prefix="/receitas")
     app.register_blueprint(cartao_bp, url_prefix="/cartao")
     app.register_blueprint(orcamento_bp, url_prefix="/configurar")
+    app.register_blueprint(categorias_bp, url_prefix="/categorias")
 
     # --- Filtro de formatação de moeda (usado nos templates) ---
     @app.template_filter("moeda")
