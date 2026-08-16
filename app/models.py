@@ -14,8 +14,19 @@ Estrutura de entidades:
     Categoria  →  tipos de gasto (Aluguel, Alimentação etc.)
         └── Transacao  →  cada gasto pertence a uma categoria
 """
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from app import db
+
+
+def _agora_utc() -> datetime:
+    """Instante atual em UTC, com fuso explicito.
+
+    Substitui `datetime.utcnow`, que o Python 3.12 marcou como obsoleto por
+    devolver um datetime SEM fuso - um valor que parece local e nao e. Comparar
+    esse valor com um datetime consciente de fuso lanca TypeError, e o defeito
+    so aparece quando alguem tenta fazer a comparacao, muito depois.
+    """
+    return datetime.now(timezone.utc)
 
 
 class OrcamentoMensal(db.Model):
@@ -35,7 +46,7 @@ class OrcamentoMensal(db.Model):
     ano: int = db.Column(db.Integer, nullable=False)        # ex: 2026
     receita_prevista: float = db.Column(db.Float, nullable=False, default=0.0)
     percentual_poupanca: float = db.Column(db.Float, nullable=False, default=10.0)
-    criado_em: datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    criado_em: datetime = db.Column(db.DateTime, default=_agora_utc)
 
     # Relacionamentos (Flask-SQLAlchemy conecta as tabelas automaticamente)
     # cascade="all, delete-orphan": ao deletar o orçamento, deleta os filhos
@@ -132,7 +143,7 @@ class Transacao(db.Model):
     tipo: str = db.Column(db.String(10), nullable=False, default="gasto")  # "gasto" | "receita"
     eh_cartao_credito: bool = db.Column(db.Boolean, nullable=False, default=False)
     observacoes: str = db.Column(db.String(500), nullable=True)
-    criado_em: datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    criado_em: datetime = db.Column(db.DateTime, default=_agora_utc)
 
     def __repr__(self) -> str:
         return f"<Transacao {self.descricao} R${self.valor:.2f}>"
@@ -158,7 +169,7 @@ class FonteReceita(db.Model):
     valor: float = db.Column(db.Float, nullable=False)
     data_recebimento: date = db.Column(db.Date, nullable=True)
     recorrente: bool = db.Column(db.Boolean, nullable=False, default=False)
-    criado_em: datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    criado_em: datetime = db.Column(db.DateTime, default=_agora_utc)
 
     def __repr__(self) -> str:
         return f"<FonteReceita {self.descricao} R${self.valor:.2f}>"

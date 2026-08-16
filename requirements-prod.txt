@@ -1,0 +1,14 @@
+# Dependencias de PRODUCAO: as de runtime mais o driver de Postgres.
+#
+# Separado de requirements.txt porque o driver so e necessario quando existe
+# DATABASE_URL apontando para um Postgres. Ele tambem e a dependencia mais
+# fragil do projeto: depende de wheel compilado para a versao exata do Python,
+# e versoes recem-lancadas do interpretador ficam meses sem wheel disponivel.
+#
+# Mantendo-o fora do arquivo principal, uma limitacao de empacotamento de
+# terceiro deixa de bloquear quem so quer rodar o projeto localmente.
+#
+# No host, defina o comando de instalacao como:
+#   pip install -r requirements-prod.txt
+-r requirements.txt
+psycopg[binary]>=3.2,<4

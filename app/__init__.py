@@ -24,7 +24,7 @@ def criar_app() -> Flask:
 
     # --- Configurações ---
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-inseguro-mude-em-producao")
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///financeiro.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = _resolver_url_banco()
     # Desativa rastreamento de modificações (economiza memória)
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -63,6 +63,32 @@ def criar_app() -> Flask:
         _popular_categorias_padrao()
 
     return app
+
+
+def _resolver_url_banco() -> str:
+    """Resolve a URL do banco a partir do ambiente, com SQLite como padrao.
+
+    Sem esta funcao, `DATABASE_URL` era documentada no `.env.example` e nunca
+    lida: a URI ficava fixa em SQLite. Em hospedagem com disco efemero isso
+    significa perder o banco inteiro a cada novo deploy, sem nenhum erro no log
+    - o app sobe, cria as tabelas vazias e segue como se estivesse tudo certo.
+
+    O ajuste de esquema tambem e necessario: Railway e Heroku entregam a URL
+    comecando com `postgres://`, um alias que o SQLAlchemy 2.x nao reconhece
+    mais. Sem a troca, a conexao falha na inicializacao.
+
+    Returns:
+        str: URI de conexao pronta para o SQLAlchemy.
+    """
+    url = os.getenv("DATABASE_URL", "").strip()
+
+    if not url:
+        return "sqlite:///financeiro.db"
+
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+
+    return url
 
 
 def _popular_categorias_padrao() -> None:

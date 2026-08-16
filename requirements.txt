@@ -1,3 +1,11 @@
+# Dependencias necessarias para RODAR a aplicacao.
+#
+# Nao ha driver de Postgres aqui de proposito. O app usa SQLite por padrao e
+# nao precisa de nada alem destes quatro pacotes - obrigar quem clona a
+# compilar um driver de banco que ele nao vai usar e atrito sem retorno.
+#
+# Para deploy com Postgres, use requirements-prod.txt.
 flask==3.1.0
 flask-sqlalchemy==3.1.1
 python-dotenv==1.0.1
+gunicorn==23.0.0

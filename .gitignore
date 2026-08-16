@@ -15,3 +15,7 @@ venv/
 *.exe
 *.dll
 ngrok*
+
+# Ferramentas locais de editor/agente
+.claude/
+.cursor/
